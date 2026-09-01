@@ -19,57 +19,48 @@ export async function POST(request) {
     }
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/interactions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+          "x-goog-api-key": apiKey
         },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: message.trim(),
-                },
-              ],
-            },
-          ],
-        }),
+          model: "gemini-3.6-flash",
+          input: message.trim()
+        })
       }
     );
 
     const data = await response.json();
 
     if (!response.ok) {
-  return Response.json({
-    reply: `Gemini Error ${response.status}: ${
-      data?.error?.message || JSON.stringify(data)
-    }`,
-  });
-}
-
-    const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (!reply) {
       return Response.json(
-        { error: "Gemini returned no response." },
-        { status: 502 }
+        {
+          error:
+            data?.error?.message ||
+            "Gemini API request failed"
+        },
+        { status: response.status }
       );
     }
 
-    return Response.json({ reply });
-  } catch (error) {
-    console.error("Nuvexo API error:", error);
+    const output =
+      data?.steps
+        ?.filter((step) => step.type === "model_output")
+        ?.flatMap((step) => step.content || [])
+        ?.filter((item) => item.type === "text")
+        ?.map((item) => item.text)
+        ?.join("") || "I couldn't generate a response.";
 
+    return Response.json({
+      reply: output
+    });
+  } catch (error) {
     return Response.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Something went wrong",
+        error: error?.message || "Internal server error"
       },
       { status: 500 }
     );
