@@ -6,20 +6,42 @@ export default function Home() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
 
-  function sendMessage() {
-    if (!message.trim()) return;
+  async function sendMessage() {
+  if (!message.trim()) return;
 
-    setMessages([
-      ...messages,
-      { role: "user", text: message.trim() },
-      {
-        role: "assistant",
-        text: "Hi! I'm Nuvexo AI. Ask me anything — I'm ready to help.",
+  const userMessage = message.trim();
+
+  setMessages([
+    ...messages,
+    { role: "user", text: userMessage },
+  ]);
+
+  setMessage("");
+
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    ]);
+      body: JSON.stringify({ message: userMessage }),
+    });
 
-    setMessage("");
+    const data = await response.json();
+
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", text: data.reply || "Something went wrong." },
+    ]);
+  } catch (error) {
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", text: "Unable to connect to Nuvexo AI." },
+    ]);
   }
+}
+
+    
 
   return (
     <main className="app">
