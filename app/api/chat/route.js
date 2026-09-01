@@ -19,7 +19,7 @@ export async function POST(request) {
     }
 
     const response = await fetch(
-                         "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
       {
         method: "POST",
         headers: {
@@ -44,19 +44,36 @@ export async function POST(request) {
 
     if (!response.ok) {
       return Response.json(
-        { error: data?.error?.message || "Gemini API error" },
+        {
+          error:
+            data?.error?.message ||
+            `Gemini API error (${response.status})`,
+        },
         { status: response.status }
       );
     }
 
     const reply =
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, I couldn't generate a response.";
+      data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!reply) {
+      return Response.json(
+        { error: "Gemini returned no response." },
+        { status: 502 }
+      );
+    }
 
     return Response.json({ reply });
   } catch (error) {
+    console.error("Nuvexo API error:", error);
+
     return Response.json(
-      { error: "Something went wrong" },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong",
+      },
       { status: 500 }
     );
   }
