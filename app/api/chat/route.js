@@ -43,15 +43,12 @@ export async function POST(request) {
     const data = await response.json();
 
     if (!response.ok) {
-      return Response.json(
-        {
-          error:
-            data?.error?.message ||
-            `Gemini API error (${response.status})`,
-        },
-        { status: response.status }
-      );
-    }
+  return Response.json({
+    reply: `Gemini Error ${response.status}: ${
+      data?.error?.message || JSON.stringify(data)
+    }`,
+  });
+}
 
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text;
